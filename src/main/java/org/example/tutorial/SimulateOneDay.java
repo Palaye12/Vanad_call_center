@@ -11,8 +11,10 @@ public class SimulateOneDay {
 
     private List<Double> arrivalTimes = new ArrayList<>();
 
+
     HashMap<Integer, Double> LES = new HashMap<Integer, Double>();
     LinkedList<Customer> waitList = new LinkedList<>();
+
     int nbServeurs = 0 ;
     HashMap<Integer,Integer> qLengthRealTime = new HashMap<Integer,Integer>();
     HashMap<Integer,HashSet<Double> > nbagentsList = new HashMap<>();
@@ -86,6 +88,12 @@ public class SimulateOneDay {
         }
     }
 
+    public static void extractCSV(String inputFile, String outputFile) throws IOException {
+
+        // Code d'extraction CSV ici
+
+    }
+
     public double getTime(String s) {
         String[] sParts = s.split(" ");
         if (sParts.length >= 2) {
@@ -106,6 +114,7 @@ public class SimulateOneDay {
             System.out.println("Type " + type + " : " + nbAgents.size() + " serveur(s)");
         }
     }
+
 
 
     public void displayFileContent() throws IOException {
@@ -159,7 +168,6 @@ public class SimulateOneDay {
             if (!customer.abandon){
                 LES.put(customer.type, customer.waitingTime);
                 servedCustomers.add(customer);
-
 
             }
 
