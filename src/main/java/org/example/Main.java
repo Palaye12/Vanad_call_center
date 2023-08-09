@@ -1,11 +1,7 @@
 package org.example;
 
 import org.example.tutorial.SimulateOneDay;
-import org.example.tutorial.CsvUtils;
-
 import java.io.IOException;
-import java.util.ArrayList;
-
 public class Main {
     public static void main(String[] args) {
 
@@ -19,8 +15,8 @@ public class Main {
 
                 // Appel de la fonction createDayCustomers depuis SimulateOneday
                 SimulateOneDay simulate = new SimulateOneDay();
-                simulate.getMonthDataset("data_with_VANAD/"+mois);
-                String output = "C:\\Users\\PC\\Dataset\\extracted"+i+".csv";
+                simulate.getMonthDataset("data with VANAD/"+mois);
+                String output = "C:\\Users\\LENOVO\\Desktop\\Master1_UCAD_FST\\B.I\\DatasetMois.csv"+i+".csv";
                 simulate.exportToCSV(output);
             } catch (IOException e) {
                 e.printStackTrace();

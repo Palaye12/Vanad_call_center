@@ -1,7 +1,6 @@
 package org.example.tutorial;
 import umontreal.ssj.simevents.Event;
 import umontreal.ssj.simevents.Sim;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -10,21 +9,14 @@ import java.util.*;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 public class SimulateOneDay  {
-
-
     HashMap<Integer, Double> LES = new HashMap<>();
+    private List<Double> arrivalTimes = new ArrayList<>();
     LinkedList<Customer> waitList = new LinkedList<>();
-
-
     HashMap<Integer,Integer> qLengthRealTime = new HashMap<>();
     HashMap<Integer,HashSet<Double> > nbAgentsList = new HashMap<>();
-
     ArrayList<Customer> servedCustomers = new ArrayList<>();
     Set<String> dayList = new HashSet<>();
     Set<Integer> typesService = new HashSet<>();
-
-
-
 
     class Customer {
 
@@ -46,13 +38,17 @@ public class SimulateOneDay  {
         //lis l'entête du fichier
         String headerLine = br.readLine();
         String readedLine ;
-
+        Integer type;
+        String jour;
         while((readedLine= br.readLine()) != null){
+            jour =readedLine.split(",")[0].split(" ")[0];
+            if(dayList.contains(jour)== false)
+                dayList.add(jour);
+            type = Integer.parseInt(readedLine.split(",")[1]);
+            if(typesService.contains(type)==false ){
+                typesService.add(type);
 
-           dayList.add(readedLine.split(",")[0].split(" ")[0]);
-           typesService.add(Integer.parseInt(readedLine.split(",")[1]));
-
-
+            }
         }
 
     }
@@ -90,16 +86,22 @@ public class SimulateOneDay  {
     }
     public void getMonthDataset(String monthfile) throws IOException{
         this.getTypesAndDays(monthfile);
-
+        this.initQLengths(); // initialiser ici
 
         for(String jour:dayList) {
-            this.getAgentsByDays(jour, monthfile);
             Sim.init();
             new EndOfSim().schedule(46800);
+            this.getAgentsByDays(jour, monthfile);
             this.createDayCustomers(jour, monthfile);
 
         }
 
+    }
+    public void initQLengths() {
+
+        for (Integer type : typesService) {
+            qLengthRealTime.put(type, 0);
+        }
 
     }
 
@@ -110,27 +112,29 @@ public class SimulateOneDay  {
         //lis l'entête du fichier
         String headerLine = br.readLine();
         String readedLine ;
-
+        Integer type;
 
         qLengthRealTime.clear();
         LES.clear();
 
-        for (Integer typeService:typesService){
-            qLengthRealTime.put(typeService,0);
-        }
 
-
-
+        //this.nbClientsTraites=0;
 
 
         while((readedLine= br.readLine()) != null){
             String jour =readedLine.split(",")[0].split(" ")[0];
+
             if(jour.equals(dayOfMonth)){
 
                 Customer customer = new Customer();
-                customer.type = Integer.parseInt(readedLine.split(",")[1]);
+                type = Integer.parseInt(readedLine.split(",")[1]);
+
+                customer.type = type;
                 customer.arrivalTime = getTime(readedLine.split(",")[0]);
-                if (!readedLine.split(",")[3].equals("NULL") ){
+
+                arrivalTimes.add(customer.arrivalTime); // Ajouter le temps d'arrivée du client à la liste
+
+                if (readedLine.split(",")[3] != "NULL"){
                     customer.serviceTime = getTime(readedLine.split(",")[6]) - getTime(readedLine.split(",")[3]);
                     customer.waitingTime = getTime(readedLine.split(",")[3]) - getTime(readedLine.split(",")[0]);
                 }
@@ -140,9 +144,14 @@ public class SimulateOneDay  {
                 }
 
 
-                        new ArrivalInQueue(customer).schedule(getTime(readedLine.split(",")[0]));
+                if(customer.waitingTime>=0) {
+                    new ArrivalInQueue(customer).schedule(getTime(readedLine.split(",")[0]));
+                    Sim.start();
+                }
 
-                        Sim.start();
+                //this.nbClientsTraites++;
+
+
 
             }
 
@@ -150,14 +159,7 @@ public class SimulateOneDay  {
         }
 
 
-
-
-
-
     }
-
-
-
 
     public double getTime(String s) {
         String[] sParts = s.split(" ");
@@ -174,11 +176,6 @@ public class SimulateOneDay  {
 
 
 
-
-
-
-
-
     class ArrivalInQueue extends Event {
 
         Customer customer ;
@@ -191,24 +188,33 @@ public class SimulateOneDay  {
         @Override
         public void actions() {
 
-            Integer length = qLengthRealTime.get(customer.type);
+            int length = qLengthRealTime.getOrDefault(customer.type, 0);
+            qLengthRealTime.put(customer.type, length + 1);
+
+            if( qLengthRealTime.get(customer.type)==null){
+                length = 0;
+            }
+            else {
+                length = qLengthRealTime.get(customer.type);
+            }
+
             if(LES.get(customer.type)==null)
-            customer.les = 0.0;
+                customer.les = 0.0;
             else
                 customer.les = LES.get(customer.type);
             customer.qLength = length ;
 
-            for (Integer i :typesService){
+            for (Integer i :qLengthRealTime.keySet()){
                 customer.qLengthAtArrival.put(i,qLengthRealTime.get(i)) ;
             }
             // Initialiser le nombre de serveurs disponibles (A faire)
-            if(nbAgentsList.get(customer.type)!=null)
-             customer.nbServeurs= nbAgentsList.get(customer.type).size();
-            else
-                customer.nbServeurs=0;
+            customer.nbServeurs= nbAgentsList.get(customer.type).size();
             waitList.add(customer);
             // mise à jour de la longueur de la file d'attente
-            qLengthRealTime.put(customer.type,length+1);
+            qLengthRealTime.put(customer.type,length + 1);
+
+            System.out.println(customer.nbServeurs);
+            System.out.println(customer.waitingTime);
 
             new Departure(customer).schedule(customer.waitingTime);
 
@@ -226,9 +232,12 @@ public class SimulateOneDay  {
         @Override
         public void actions() {
 
-            Integer length = qLengthRealTime.get(customer.type);
+            // Update the queue length for the customer's type
+            int length = qLengthRealTime.getOrDefault(customer.type, 0);
+            qLengthRealTime.put(customer.type, length - 1);
             waitList.remove(customer);
-            qLengthRealTime.put(customer.type,length-1);
+            //qLengthRealTime.put(customer.type,length-1);
+
             if (!customer.abandon){
                 LES.put(customer.type, customer.waitingTime);
                 servedCustomers.add(customer);
@@ -237,8 +246,6 @@ public class SimulateOneDay  {
 
         }
     }
-
-
     class EndOfSim extends Event {
         public void actions() {
 
@@ -252,7 +259,7 @@ public class SimulateOneDay  {
              CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT)) {
 
             // Écriture de l'en-tête du fichier CSV (si nécessaire)
-             csvPrinter.printRecord("Type","qT","l", "t" ,"s","LES","w");
+            csvPrinter.printRecord("Type","qT","l", "t" ,"s","LES","w");
 
             // Écriture des données pour chaque objet dans l'ArrayList
             for (Customer c : customers) {
