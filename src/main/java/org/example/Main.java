@@ -17,7 +17,7 @@ public class Main {
                 // Appel de la fonction createDayCustomers depuis SimulateOneday
                 SimulateOneDay simulate = new SimulateOneDay();
                 simulate.getMonthDataset("data with VANAD/"+mois);
-                String output = "C:\\Users\\PC\\Dataset\\extracted"+i+".csv";
+                String output = "C:\\Users\\LENOVO\\Desktop\\Master1_UCAD_FST\\B.I\\E"+i+".csv";
 
                 simulate.exportToCSV(output);
             } catch (IOException e) {
