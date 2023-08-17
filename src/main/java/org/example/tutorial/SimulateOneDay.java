@@ -287,29 +287,8 @@ public class SimulateOneDay  {
              CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT)) {
 
             // Écriture de l'en-tête du fichier CSV (si nécessaire)
-            csvPrinter.printRecord("T","qt","30172","30175","30179", "30066",
-                    "30511",
-                    "30241",
-                    "30181",
-                    "30519",
-                    "30174",
-                    "30176",
-                    "30180",
-                    "30325",
-                    "30236",
-                    "30173",
-                    "30177",
-                    "30584",
-                    "30598",
-                    "30518",
-                    "30363",
-                    "30170",
-                    "30694",
-                    "30334",
-                    "30729",
-                    "30178",
-                    "30747",
-                    "30764","30560","t","s","Les","w");
+            csvPrinter.printRecord("T","qt","r","t","s","Les","w");
+
 
             // Écriture des données pour chaque objet dans l'ArrayList
             for (Customer c : customers) {
